@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta firstname="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Student Manage</title>
+</head>
+
+<body>
+    <div class="container mt-5 text-center"  >
+        <h2 class="text-center mb-5">Student Manage</h2>
+        <table class="table table-responsive table-striped">
+            <thead>
+            <td colspan="2" class="text-center"><input class="form-control" id="firstname" placeholder="Firstname" type="text"></td>
+            <td colspan="2" class="text-center"><input class="form-control" id="lastname" placeholder="Lastname" type="text"></td>
+            <td colspan="2" class="text-center"><input class="form-control" id="gpax" placeholder="Grade" type="text"></td>
+            <td></td>
+    
+        <tr>
+            <td colspan="12">
+            <div class="btn-group d-flex justify-content-between" role= "group">
+                <button class="btn btn-outline-success" onclick="AddData()">
+                <img height="40" src="https://cdn-icons-png.flaticon.com/512/148/148764.png">
+                </button>
+                <button class="btn btn-outline-success" onclick="searchData()">
+                <img height="40" src="https://cdn-icons-png.flaticon.com/512/64/64673.png">
+                </button>
+            </div>
+            </td>
+        
+        </tr>       
+            <tr>
+                <th class="text-center col-1">ID</th>
+                <th class="text-center col-3">Firstame</th>
+                <th class="text-center col-3">Lastname</th>
+                <th class="text-center col-2">gpax</th>
+                <th class="text-center col-1">Flag</th>
+                <th class="text-center col-2">Manage</th>
+            </tr>
+
+            </thead>
+            <tbody id="myTable">
+                {% for obj in data %}
+                <tr>
+                    <td class="text-center col-1">{{ obj.id }}</td>
+                    <td class="text-center col-3">{{ obj.name }}</td>
+                    <td class="text-center col-3">{{ obj.surname }}</td>
+                    <td class="text-center col-2">{{ obj.gpax }}</td>
+                    <td class="text-center col-1">{{ obj.flag }}</td>
+                    <td class="text-center col-2">
+                        <a class="btn btn-outline-info" onclick="edit_data({{ obj.id }})"><img
+                                height="25" src="https://cdn-icons-png.flaticon.com/512/181/181540.png"></a>
+        
+                        <a class="btn btn-danger text-center" onclick="delete_data({{ obj.id }})"><img
+                                height="25" src="https://cdn-icons-png.flaticon.com/512/565/565491.png"></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    
+    <!-- Bootstrap 5 JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+
+        AddData = () => {
+            var firstnameInput = document.getElementById("firstname");
+            var lastnameInput = document.getElementById("lastname");
+            var gpaxInput = document.getElementById("gpax");
+
+            // check input
+            if (firstnameInput.value == "" || lastnameInput.value == "" || gpaxInput.value == "") {
+                Swal.fire({
+                    icon: 'Error',
+                    title: 'Try again',
+                    text: 'Please fill in all fields!',
+                })
+                return;
+            } else {
+                fetch('/addStudent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: firstnameInput.value,
+                        surname: lastnameInput.value,
+                        gpax: gpaxInput.value
+                    })
+                }).then((res) => {
+                    return res.json();
+                }).then((data) => {
+                    if (data.result == "success") {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Add data success!',
+                        })
+                        location.reload();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Add data error!',
+                        })
+                    }
+                })
+            }
+        }
+
+        edit_data = (id) => {
+  fetch('/getStudentById/' + id).then((data) => {
+    return data.json();
+  }).then((data) => {
+    Swal.fire({
+      title: 'Edit data',
+      html: 
+        '<input disabled id="swal-input1" class="swal2-input" value="' + data.data[0] + '">'
+        + '<input id="swal-input2" class="swal2-input" value="' + data.data[1] + '">'
+        + '<input id="swal-input4" class="swal2-input" value="' + data.data[2] + '">'
+        + '<input id="swal-input5" class="swal2-input" value="' + data.data[3] + '">'
+        + '<input id="swal-input6" class="swal2-input" value="' + data.data[4] + '">',
+      focusConfirm: false,
+      preConfirm: () => {
+        return {
+          id: id,
+          name: document.getElementById('swal-input2').value,
+          surname: document.getElementById('swal-input4').value,
+          gpax: document.getElementById('swal-input5').value
+        };
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Save',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch('/updateStudent', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(result.value)
+        }).then((response) => {
+          if (response.ok) {
+            Swal.fire({
+              title: 'Success!',
+              text: 'Data has been updated.',
+              icon: 'success'
+            }).then((result) => {
+              location.reload();
+            });
+          } else {
+            throw new Error(response.statusText);
+          }
+        }).catch((error) => {
+          Swal.fire({
+            title: 'Error!',
+            text: error.message,
+            icon: 'error'
+          });
+        });
+      }
+    });
+  });
+};
+
+        
+        delete_data = (id) => {
+            swal.fire({
+                title: 'Are you sure?',
+                text: 'This action cannot be undone!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+                }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/deleteStudent', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: id
+                        })
+                    }).then((res) => {
+                        return res.json();
+                    }).then((data) => {
+                        if (data.result == "success") {
+                            swal.fire({
+                                title: 'Deleted!',
+                                text: 'Your data has been deleted.',
+                                icon: 'success'
+                            })
+                            location.reload();
+                        } else {
+                            swal.fire({
+                                title: 'Error!',
+                                text: 'Delete data error!',
+                                icon: 'error'
+                            })
+                        }
+                    })
+                }
+        })
+    }
+
+    searchData = () => {
+        var firstnameInput = document.getElementById("firstname").value;
+        var lastnameInput = document.getElementById("lastname").value;
+        var gpaxInput = document.getElementById("gpax").value;
+
+        // check input
+        if (firstnameInput == "" && lastnameInput == "" && gpaxInput == "") {
+            location.reload();
+        } 
+        else {
+            const list = [];
+            const tbody = document.getElementById('myTable');
+            const rows = tbody.querySelectorAll('tr');
+            for (let i = 0; i < rows.length; i++){
+                const row = rows[i];
+                const cells = row.querySelectorAll('td');
+                const name = cells[1].innerText;
+                const surname = cells[2].innerText;
+                const gpax = cells[3].innerText;
+                if (firstnameInput == name || lastnameInput == surname || gpaxInput == gpax) {
+                    list.push(row);
+                }
+            }
+            tbody.innerHTML = '';
+            list.forEach((row) => {
+                tbody.appendChild(row);
+            });
+        }
+    }
+
+
+    </script>
+    </body>
+</html>
+
+
+
